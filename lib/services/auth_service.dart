@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://your-api-domain/api';
+  static const String _baseUrl = 'http://127.0.0.1:8000/api/auth';
   
-  // Login user
   static Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/login'),
@@ -13,17 +12,77 @@ class AuthService {
       body: jsonEncode({'email': email, 'password': password}),
     );
 
+    final responseData = jsonDecode(response.body);
+    
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      final user = responseData['user'];
+      
+      await Future.wait([
+        prefs.setString('token', responseData['access_token']),
+        prefs.setString('user_id', user['id'].toString()),
+        prefs.setString('name', user['name'] ?? ''),
+        prefs.setString('email', user['email'] ?? ''),
+        prefs.setString('role', user['role'] ?? ''),
+        if (user['karyawan'] != null) ...[
+          prefs.setString('karyawan_id', user['karyawan']['id']?.toString() ?? ''),
+          prefs.setString('nip', user['karyawan']['nip'] ?? ''),
+          prefs.setString('nama', user['karyawan']['nama'] ?? ''),
+        ]
+      ]);
+      
+      return responseData;
     } else {
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Login failed');
+      throw Exception(responseData['message'] ?? 'Login failed');
     }
   }
 
-  // Logout user
+  static Future<Map<String, dynamic>> register(
+    String name, 
+    String email, 
+    String password,
+    String passwordConfirmation,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    final responseData = jsonDecode(response.body);
+    
+    if (response.statusCode == 200 || response.statusCode == 201) { 
+      final prefs = await SharedPreferences.getInstance();
+      final user = responseData['user'];
+
+      await Future.wait([
+        prefs.setString('token', responseData['access_token']),
+        prefs.setString('user_id', user['id'].toString()),
+        prefs.setString('name', user['name'] ?? ''),
+        prefs.setString('email', user['email'] ?? ''),
+      ]);
+      // ---------------------------------------------------
+      
+      return responseData;
+    } else {
+      String errorMessage = 'Registration failed';
+      if (responseData.containsKey('errors')) {
+        errorMessage = responseData['errors'].entries.first.value[0];
+      } else if (responseData.containsKey('message')) {
+        errorMessage = responseData['message'];
+      }
+      throw Exception(errorMessage);
+    }
+  }
+
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
+    final token = prefs.getString('token');
     
     if (token != null) {
       await http.post(
@@ -35,20 +94,16 @@ class AuthService {
       );
     }
     
-    await prefs.remove('auth_token');
-    await prefs.remove('user_data');
+    await prefs.clear();
   }
 
-  // Check if user is logged in
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token') != null;
+    return prefs.getString('token') != null;
   }
 
-  // Get current user data
-  static Future<Map<String, dynamic>?> getUserData() async {
+  static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final userData = prefs.getString('user_data');
-    return userData != null ? jsonDecode(userData) : null;
+    return prefs.getString('token');
   }
 }

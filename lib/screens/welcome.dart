@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Impor halaman login
+import 'login.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  _WelcomeScreenState createState() => _WelcomeScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
@@ -21,128 +21,160 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     {
       "title": "Selamat Datang",
       "subtitle": "Siap untuk mengelola tugas dengan lebih efisien dan tetap terorganisir dalam setiap hari kerja.",
-      "image": "assets/logo.png", 
+      "image": "assets/logo.png",
     },
   ];
 
   void _nextPage() {
     if (_currentPage < onboardingData.length - 1) {
-      _pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.ease);
-    } else {
-      
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoginPage()),
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
+    } else {
+      _navigateToLogin();
     }
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (int page) {
-                      setState(() {
-                        _currentPage = page;
-                      });
-                    },
-                    itemCount: onboardingData.length,
-                    itemBuilder: (context, index) => Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              if (index != 0)
-                                IconButton(
-                                  icon: Icon(Icons.arrow_back, color: Colors.black),
-                                  onPressed: () {
-                                    _pageController.previousPage(duration: Duration(milliseconds: 300), curve: Curves.ease);
-                                  },
-                                )
-                              else
-                                SizedBox(width: 48), 
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => LoginPage()),
-                                  );
-                                },
-                                child: Text("Skip", style: TextStyle(color: Colors.black)),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 20),
-                          Image.asset(
-                            onboardingData[index]['image']!,
-                            height: 250,
-                            width: 250,
-                            fit: BoxFit.contain, 
-                          ),
-                          SizedBox(height: 30),
-                          Text(
-                            onboardingData[index]['title']!,
-                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-                          ),
-                          SizedBox(height: 15),
-                          Text(
-                            onboardingData[index]['subtitle']!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.black87),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 80,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(onboardingData.length, (index) => buildDot(index)),
-                    ),
-                  ),
-                ],
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (int page) {
+                  setState(() => _currentPage = page);
+                },
+                itemCount: onboardingData.length,
+                itemBuilder: (context, index) => _buildOnboardingPage(index),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 30),
-              child: ElevatedButton(
-                onPressed: _nextPage,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, 
-                  shape: CircleBorder(),
-                  padding: EdgeInsets.all(20),
-                ),
-                child: Icon(Icons.arrow_forward, color: Colors.white),
-              ),
-            )
+            _buildPageIndicator(),
+            _buildNavigationButton(),
+            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  Widget buildDot(int index) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      margin: EdgeInsets.symmetric(horizontal: 5),
-      height: 8,
-      width: _currentPage == index ? 20 : 8,
-      decoration: BoxDecoration(
-        color: _currentPage == index ? Colors.blue : Colors.grey,
-        borderRadius: BorderRadius.circular(5),
+  Widget _buildOnboardingPage(int index) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (index != 0)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                )
+              else
+                const SizedBox(width: 48),
+              TextButton(
+                onPressed: _navigateToLogin,
+                child: const Text(
+                  "Skip",
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+          Image.asset(
+            onboardingData[index]['image']!,
+            height: 250,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 40),
+          Text(
+            onboardingData[index]['title']!,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              onboardingData[index]['subtitle']!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        onboardingData.length,
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          height: 8,
+          width: _currentPage == index ? 24 : 8,
+          decoration: BoxDecoration(
+            color: _currentPage == index 
+                ? const Color(0xFF001F3F) // Warna biru tua yang sama dengan login
+                : Colors.grey[300],
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationButton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 40, bottom: 20),
+      child: ElevatedButton(
+        onPressed: _nextPage,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF001F3F), // Warna konsisten dengan login
+          shape: const CircleBorder(),
+          padding: const EdgeInsets.all(16),
+          elevation: 2,
+        ),
+        child: Icon(
+          _currentPage == onboardingData.length - 1
+              ? Icons.check
+              : Icons.arrow_forward,
+          color: Colors.white,
+        ),
       ),
     );
   }
