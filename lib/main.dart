@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'screens/welcome.dart';
-import 'screens/home.dart'; // Make sure to import your HomePage
-import 'screens/complete_profile.dart'; // Import other screens you need
+import 'screens/home.dart';
+import 'screens/complete_profile.dart';
 
-void main() {
+void main() async {
+  // Pastikan binding flutter diinisialisasi
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inisialisasi timezone database
+  tz.initializeTimeZones();
+  
+  // Inisialisasi format tanggal bahasa Indonesia
+  await initializeDateFormatting('id_ID', null);
+  
   runApp(const MyApp());
 }
 
@@ -18,13 +30,21 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      // Define your initial route
+      // Konfigurasi lokal Indonesia
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'), // Bahasa Indonesia
+      ],
+      // Rute aplikasi
       initialRoute: '/',
-      // Define all your named routes
       routes: {
         '/': (context) => const WelcomeScreen(),
         '/complete_profile': (context) => const CompleteProfilePage(),
-        '/home': (context) => const TaskManagerScreen(), 
+        '/home': (context) => const TaskManagerScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
